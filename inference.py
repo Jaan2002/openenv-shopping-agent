@@ -48,7 +48,7 @@ Then explain:
         # Robust parsing
         selected = None
 
-        # Step 1: Extract "Selected product"
+        #  Extract the "Selected product"
         match = re.search(r"Selected product:\s*(.*)", output, re.IGNORECASE)
 
         if match:
@@ -59,21 +59,21 @@ Then explain:
                     selected = p.name
                     break
 
-        # Step 2: fallback → bold match
+        
         if not selected:
             for p in obs.products:
                 if f"**{p.name}**" in output:
                     selected = p.name
                     break
 
-        # Step 3: fallback → simple match
+        
         if not selected:
             for p in obs.products:
                 if p.name.lower() in output.lower():
                     selected = p.name
                     break
 
-        # Step 4: final fallback
+        
         if not selected:
             selected = obs.products[0].name
 
