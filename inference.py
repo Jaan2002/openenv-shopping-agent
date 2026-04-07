@@ -4,15 +4,23 @@ from openai import OpenAI
 from env import ShoppingEnv
 from models import Action
 
+
+API_BASE_URL = os.getenv("API_BASE_URL", "https://openrouter.ai/api/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:free")
+HF_TOKEN = os.getenv("HF_TOKEN")
+
+if HF_TOKEN is None:
+    raise ValueError("HF_TOKEN environment variable is required")
+
+
 client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY"),
-    base_url="https://openrouter.ai/api/v1"
+    base_url=API_BASE_URL,
+    api_key=HF_TOKEN
 )
 
 
 def get_ai_action(obs):
     try:
-        # Build prompt
         prompt = f"""
 Category: {obs.category}
 User need: {obs.user_need}
@@ -36,9 +44,8 @@ Then explain:
 2. Why other options are not suitable
 """
 
-        # API call
         response = client.chat.completions.create(
-            model="openai/gpt-oss-120b:free",
+            model=MODEL_NAME,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2
         )
@@ -47,33 +54,21 @@ Then explain:
 
         # Robust parsing
         selected = None
-
-        #  Extract the "Selected product"
         match = re.search(r"Selected product:\s*(.*)", output, re.IGNORECASE)
 
         if match:
             extracted_name = match.group(1).strip()
-
             for p in obs.products:
                 if p.name.lower() in extracted_name.lower():
                     selected = p.name
                     break
 
-        
-        if not selected:
-            for p in obs.products:
-                if f"**{p.name}**" in output:
-                    selected = p.name
-                    break
-
-        
         if not selected:
             for p in obs.products:
                 if p.name.lower() in output.lower():
                     selected = p.name
                     break
 
-        
         if not selected:
             selected = obs.products[0].name
 
@@ -83,39 +78,59 @@ Then explain:
         )
 
     except Exception as e:
-        print("Fallback due to error:", e)
-
         return Action(
             action_type=obs.products[0].name,
-            explanation="Fallback decision"
+            explanation=f"Fallback due to error: {e}"
         )
 
 
 def run():
-    print("Initializing Smart Shopping Environment for AI Agent Evaluation...")
-
     env = ShoppingEnv()
-    total_score=0
-    
-    for i in range(3):
-        obs = env.reset()
-        
-        print(f"\nTask {i+1} ({['Easy','Medium','Hard'][i]}): {obs.category} | {obs.user_need}")
-        print("User need:", obs.user_need)
-        print("Products:", [p.name for p in obs.products])
+    rewards = []
+    step_count = 0
 
-        action = get_ai_action(obs)
+    # START
+    print(f"[START] task=shopping env=openenv-shopping model={MODEL_NAME}")
 
-        print("Selected Product:", action.action_type)
-        print("Explanation:", action.explanation, "...")
+    try:
+        for i in range(3):
+            obs = env.reset()
 
-        obs, reward, done, _ = env.step(action)
+            action = get_ai_action(obs)
 
-        print("Reward Score:", reward.score)
+            obs, reward, done, info = env.step(action)
 
-        total_score += reward.score 
+            rewards.append(f"{reward.score:.2f}")
+            step_count += 1
 
-    print("\nFinal Score across tasks:", total_score) 
+            error_msg = None
+            if hasattr(obs, "last_action_error") and obs.last_action_error:
+                error_msg = obs.last_action_error
+
+            # STEP
+            print(
+                f"[STEP] step={step_count} "
+                f"action={action.action_type} "
+                f"reward={reward.score:.2f} "
+                f"done={str(done).lower()} "
+                f"error={error_msg if error_msg else 'null'}"
+            )
+
+    except Exception as e:
+        print(f"[STEP] step={step_count} action=error reward=0.00 done=true error={str(e)}")
+
+    finally:
+        if hasattr(env, "close"):
+            env.close()
+
+        success = True if len(rewards) > 0 else False
+
+        # END
+        print(
+            f"[END] success={str(success).lower()} "
+            f"steps={step_count} "
+            f"rewards={','.join(rewards)}"
+        )
 
 
 if __name__ == "__main__":
