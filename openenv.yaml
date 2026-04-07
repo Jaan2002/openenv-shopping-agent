@@ -1,0 +1,4 @@
+name: shopping-env
+description: AI Shopping Assistant Environment
+version: 0.1.0
+entry_point: env:ShoppingEnv
