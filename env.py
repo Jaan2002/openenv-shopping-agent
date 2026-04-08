@@ -1,3 +1,4 @@
+from typing import List, Dict, Any
 from models import Observation, Action, Reward, Product
 from tasks import tasks
 
@@ -8,60 +9,78 @@ class ShoppingEnv:
         self.current_task = None
 
     def reset(self):
-      self.current_task = tasks[self.current_task_index]
+        self.current_task = tasks[self.current_task_index]
 
-      products = [Product(**p) for p in self.current_task["products"]]
+        products = [Product(**p) for p in self.current_task["products"]]
 
-      return Observation(
-          user_need=self.current_task["user_need"],
-          budget=self.current_task["budget"],
-          priority=self.current_task["priority"],
-          category=self.current_task["category"],  
-          products=products
-       )
+        return Observation(
+            user_need=self.current_task["user_need"],
+            budget=self.current_task["budget"],
+            priority=self.current_task["priority"],
+            products=products
+        )
 
     def step(self, action: Action):
-        selected = action.action_type
-        optimal = self.current_task["optimal"]
-        products = self.current_task["products"]
-
-        score = 0.0
+        task = self.current_task
+        products = task["products"]
 
         # Find selected product
         selected_product = None
         for p in products:
-            if p["name"] == selected:
+            if p["name"] == action.action_type:
                 selected_product = p
                 break
 
-        # Grading Logic
-        if selected == optimal:
-            score += 1.0
-        elif selected_product:
-            score += 0.5
+        # Base score
+        score = 0.5
+
+        if selected_product:
+            # Budget check
+            if selected_product["price"] <= task["budget"]:
+                score += 0.2
+            else:
+                score -= 0.2
+
+            # Priority-based scoring
+            if task["priority"] == "price":
+                best = min(products, key=lambda x: x["price"])
+                if selected_product["name"] == best["name"]:
+                    score += 0.2
+
+            elif task["priority"] == "rating":
+                best = max(products, key=lambda x: x["rating"])
+                if selected_product["name"] == best["name"]:
+                    score += 0.2
+
+            elif task["priority"] == "battery":
+                best = max(products, key=lambda x: x["battery"])
+                if selected_product["name"] == best["name"]:
+                    score += 0.2
+
         else:
-            score -= 0.5
+            score = 0.1  # fallback for invalid action
 
-        # Budget penalty (real-world constraint)
-        if selected_product and selected_product["price"] > self.current_task["budget"]:
-            score -= 0.3
+        
+        score = max(0.1, min(0.9, score))
 
-        # Explanation bonus
-        if action.explanation and len(action.explanation) > 15:
-            score += 0.2
-
-        # Clamp score (0 → 1)
-        score = max(0.0, min(score, 1.0))
-
-        reward = Reward(score=score)
         done = True
+        info = {}
+
+        observation = Observation(
+            user_need=task["user_need"],
+            budget=task["budget"],
+            priority=task["priority"],
+            products=[Product(**p) for p in products]
+        )
+
+        reward = Reward(score=round(score, 2))
 
         # Move to next task
-        self.current_task_index += 1
-        if self.current_task_index >= len(tasks):
-            self.current_task_index = 0
+        self.current_task_index = (self.current_task_index + 1) % len(tasks)
 
-        return self.reset(), reward, done, {}
+        return observation, reward, done, info
 
     def state(self):
-        return self.current_task
+        return {
+            "current_task_index": self.current_task_index
+        }
