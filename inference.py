@@ -87,9 +87,14 @@ def run():
 
         print(f"[START] task=shopping env=openenv-shopping model={MODEL_NAME}")
 
-        for i in range(3):
+        total_tasks = env.state().get("total_tasks", 3)
+
+        for i in range(total_tasks):
             try:
                 obs = env.reset()
+
+                if obs is None:
+                  break
 
                 action = get_ai_action(obs)
 
