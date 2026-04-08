@@ -1,9 +1,16 @@
 from fastapi import FastAPI
 from env import ShoppingEnv
 from models import Action
+from inference import run
 
 app = FastAPI()
 env = ShoppingEnv()
+
+
+@app.get("/")
+def home():
+    return {"message": "Shopping AI Env Running"}
+
 
 @app.post("/reset")
 def reset():
@@ -24,3 +31,7 @@ def step(action: dict):
 @app.get("/state")
 def state():
     return {"status": "running"}
+
+@app.on_event("startup")
+def run_inference_on_start():
+    run()
