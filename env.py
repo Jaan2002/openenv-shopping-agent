@@ -1,4 +1,3 @@
-from typing import List, Dict, Any
 from models import Observation, Action, Reward, Product
 from tasks import tasks
 
@@ -9,6 +8,9 @@ class ShoppingEnv:
         self.current_task = None
 
     def reset(self):
+        if self.current_task_index >= len(tasks):
+            self.current_task_index = 0
+
         self.current_task = tasks[self.current_task_index]
 
         products = [Product(**p) for p in self.current_task["products"]]
@@ -56,9 +58,8 @@ class ShoppingEnv:
                 best = max(products, key=lambda x: x["battery"])
                 if selected_product["name"] == best["name"]:
                     score += 0.2
-
         else:
-            score = 0.1  # fallback for invalid action
+            score = 0.1  # fallback if invalid action
 
         
         score = max(0.1, min(0.9, score))
@@ -75,8 +76,8 @@ class ShoppingEnv:
 
         reward = Reward(score=round(score, 2))
 
-        # Move to next task
-        self.current_task_index = (self.current_task_index + 1) % len(tasks)
+        
+        self.current_task_index += 1
 
         return observation, reward, done, info
 
