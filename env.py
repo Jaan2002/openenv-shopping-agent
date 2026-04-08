@@ -4,14 +4,11 @@ from tasks import tasks
 
 class ShoppingEnv:
     def __init__(self):
-        self.current_task_index = 0
-        self.current_task = None
+        self.current_task = tasks[0]  # Always first task
 
     def reset(self):
-        if self.current_task_index >= len(tasks):
-            self.current_task_index = 0
-
-        self.current_task = tasks[self.current_task_index]
+        # Always return FIRST task (deterministic)
+        self.current_task = tasks[0]
 
         products = [Product(**p) for p in self.current_task["products"]]
 
@@ -26,24 +23,20 @@ class ShoppingEnv:
         task = self.current_task
         products = task["products"]
 
-        # Find selected product
         selected_product = None
         for p in products:
             if p["name"] == action.action_type:
                 selected_product = p
                 break
 
-        # Base score
         score = 0.5
 
         if selected_product:
-            # Budget check
             if selected_product["price"] <= task["budget"]:
                 score += 0.2
             else:
                 score -= 0.2
 
-            # Priority-based scoring
             if task["priority"] == "price":
                 best = min(products, key=lambda x: x["price"])
                 if selected_product["name"] == best["name"]:
@@ -59,9 +52,9 @@ class ShoppingEnv:
                 if selected_product["name"] == best["name"]:
                     score += 0.2
         else:
-            score = 0.1  # fallback if invalid action
+            score = 0.1
 
-        
+        # Strict range
         score = max(0.1, min(0.9, score))
 
         done = True
@@ -76,12 +69,7 @@ class ShoppingEnv:
 
         reward = Reward(score=round(score, 2))
 
-        
-        self.current_task_index += 1
-
         return observation, reward, done, info
 
     def state(self):
-        return {
-            "current_task_index": self.current_task_index
-        }
+        return {"status": "running"}
