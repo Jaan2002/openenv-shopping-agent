@@ -2,7 +2,7 @@
 name = "shopping-ai-env"
 version = "0.1.0"
 description = "AI-powered shopping environment for OpenEnv evaluation"
-authors = [{ name="Jaanvi Kapoor" }]
+authors = [{ name = "Jaanvi Kapoor" }]
 
 dependencies = [
   "fastapi",
@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [project.scripts]
-server = "app:app"
+server = "server.app:main"
 
 [build-system]
 requires = ["setuptools"]
