@@ -4,15 +4,16 @@ from tasks import tasks
 
 class ShoppingEnv:
     def __init__(self):
-        self.current_task = tasks[0]  # Always first task
+        self.current_task = tasks[0]  
 
     def reset(self):
-        # Always return FIRST task (deterministic)
+        
         self.current_task = tasks[0]
 
         products = [Product(**p) for p in self.current_task["products"]]
 
         return Observation(
+            category=self.current_task["category"],  
             user_need=self.current_task["user_need"],
             budget=self.current_task["budget"],
             priority=self.current_task["priority"],
@@ -23,20 +24,23 @@ class ShoppingEnv:
         task = self.current_task
         products = task["products"]
 
+        # Find selected product
         selected_product = None
         for p in products:
             if p["name"] == action.action_type:
                 selected_product = p
                 break
 
-        score = 0.5
+        score = 0.5  # base score
 
         if selected_product:
+            # Budget check
             if selected_product["price"] <= task["budget"]:
                 score += 0.2
             else:
                 score -= 0.2
 
+            # Priority scoring
             if task["priority"] == "price":
                 best = min(products, key=lambda x: x["price"])
                 if selected_product["name"] == best["name"]:
@@ -52,15 +56,16 @@ class ShoppingEnv:
                 if selected_product["name"] == best["name"]:
                     score += 0.2
         else:
-            score = 0.1
+            score = 0.1  # fallback for invalid action
 
-        # Strict range
+        
         score = max(0.1, min(0.9, score))
 
         done = True
         info = {}
 
         observation = Observation(
+            category=task["category"],  
             user_need=task["user_need"],
             budget=task["budget"],
             priority=task["priority"],
