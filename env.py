@@ -1,17 +1,8 @@
 """
 ShoppingEnv — OpenEnv-compliant AI Shopping Assistant Environment
 =================================================================
-Models a real-world multi-criteria product recommendation task.
-An agent receives a shopping scenario (user need, budget, priority)
-and must select the best product from a candidate list.
-
-Reward is shaped to provide a dense, informative signal:
-  - Grader match (optimal product selected)  → high base score
-  - Budget compliance bonus/penalty
-  - Priority alignment bonus (price / rating / battery)
-  - Partial credit for near-optimal choices
-
-All scores are strictly within (0.0, 1.0) exclusive.
+Each episode: reset() → step(action) → reward
+Index only advances AFTER step(), not in reset().
 """
 
 from __future__ import annotations
@@ -24,57 +15,40 @@ class ShoppingEnv:
     """
     OpenEnv environment for multi-criteria AI shopping decisions.
 
-    Episodes
-    --------
-    Each episode corresponds to one shopping task. The agent receives
-    an Observation, picks one product via Action, and receives a Reward.
-
-    State transitions
-    -----------------
-    reset() → Observation  (start new episode)
-    step(action) → (Observation, Reward, done, info)
+    Correct episode flow
+    --------------------
+    obs = env.reset()        # loads current task, does NOT advance index
+    obs, reward, done, info = env.step(action)  # scores + advances index
 
     Score range
     -----------
     All reward scores are strictly in (0.0, 1.0) — never 0.0 or 1.0.
     """
 
-    # ------------------------------------------------------------------ #
-    #  Lifecycle                                                           #
-    # ------------------------------------------------------------------ #
-
     def __init__(self) -> None:
         self.current_task_index: int = 0
         self.current_task: dict = tasks[0]
         self._episode_count: int = 0
 
+
     def reset(self) -> Observation:
         """
-        Start a new episode.
-
-        Cycles through all tasks in order; wraps around after the last task.
-
-        Returns
-        -------
-        Observation
-            The initial observation for the new episode.
+        Load the current task and return its observation.
+        Does NOT advance the task index — that happens in step().
         """
         if self.current_task_index >= len(tasks):
             self.current_task_index = 0
 
         self.current_task = tasks[self.current_task_index]
-        self.current_task_index += 1
         self._episode_count += 1
 
         return self._build_observation(self.current_task)
 
-    # ------------------------------------------------------------------ #
-    #  Core step                                                           #
-    # ------------------------------------------------------------------ #
+   
 
     def step(self, action: Action):
         """
-        Execute one action and return the transition tuple.
+        Execute one action, compute reward, then advance to next task.
 
         Parameters
         ----------
@@ -84,45 +58,43 @@ class ShoppingEnv:
         Returns
         -------
         observation : Observation
-            Post-step observation (same task, for logging / consistency).
-        reward : Reward
-            Score strictly in (0.0, 1.0).
-        done : bool
-            Always True — each task is a single-step episode.
-        info : dict
-            Diagnostic info (optimal product, score breakdown).
+        reward      : Reward  — score strictly in (0.0, 1.0)
+        done        : bool    — always True (single-step episodes)
+        info        : dict    — diagnostics
         """
         task = self.current_task
         products = task["products"]
         grader = task.get("grader", {})
 
-        # ── Find selected product ──────────────────────────────────────
+        # ── Find selected product (case-insensitive) ───────────────────
         selected = None
         for p in products:
             if p["name"].strip().lower() == action.action_type.strip().lower():
                 selected = p
                 break
 
-        # ── Base score from grader ────────────────────────────────────
+
+        breakdown: dict = {}
+
         if selected is None:
-            # Invalid / unrecognised product name — minimal score
             score = 0.15
-            breakdown = {"reason": "product_not_found", "base": 0.15}
+            breakdown["reason"] = "product_not_found"
         else:
             optimal_name = grader.get("target", task.get("optimal", ""))
             is_optimal = selected["name"] == optimal_name
 
             if is_optimal:
                 score = grader.get("score_if_correct", 0.75)
-                breakdown = {"reason": "optimal_match", "base": score}
+                breakdown["reason"] = "optimal_match"
             else:
                 score = grader.get("score_if_wrong", 0.30)
-                breakdown = {"reason": "suboptimal", "base": score}
+                breakdown["reason"] = "suboptimal"
 
-            # ── Dense reward shaping ──────────────────────────────────
+            breakdown["base"] = score
+
+
             bonus = 0.0
 
-            # Budget compliance
             if selected["price"] <= task["budget"]:
                 bonus += 0.05
                 breakdown["budget_bonus"] = 0.05
@@ -130,7 +102,6 @@ class ShoppingEnv:
                 bonus -= 0.08
                 breakdown["budget_penalty"] = -0.08
 
-            # Priority alignment
             priority = task.get("priority", "")
             if priority == "price":
                 best = min(products, key=lambda x: x["price"])
@@ -150,9 +121,7 @@ class ShoppingEnv:
 
             score += bonus
 
-        # ── Clamp strictly within (0.0, 1.0) ─────────────────────────
-        score = max(0.12, min(0.88, score))
-        score = round(score, 2)
+        score = round(max(0.12, min(0.88, score)), 2)
 
         info = {
             "optimal": task.get("optimal"),
@@ -161,19 +130,18 @@ class ShoppingEnv:
             "task_name": task.get("name"),
         }
 
+   
+        self.current_task_index += 1
+
         return (
             self._build_observation(task),
             Reward(score=score),
-            True,   # done — single-step episodes
+            True,
             info,
         )
 
-    # ------------------------------------------------------------------ #
-    #  State & helpers                                                     #
-    # ------------------------------------------------------------------ #
 
     def state(self) -> dict:
-        """Return lightweight environment state for inspection."""
         return {
             "status": "running",
             "episode_count": self._episode_count,
@@ -181,9 +149,6 @@ class ShoppingEnv:
             "total_tasks": len(tasks),
         }
 
-    # ------------------------------------------------------------------ #
-    #  Private                                                             #
-    # ------------------------------------------------------------------ #
 
     @staticmethod
     def _build_observation(task: dict) -> Observation:
