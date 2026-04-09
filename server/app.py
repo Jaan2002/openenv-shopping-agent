@@ -32,7 +32,7 @@ def step(action: dict):
 
 @app.get("/state")
 def state():
-    return {"status": "running"}
+    return env.state()
 
 
 @app.on_event("startup")
