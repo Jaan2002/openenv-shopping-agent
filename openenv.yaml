@@ -1,21 +1,10 @@
-# OpenEnv manifest (spec v1) + task graders for automated evaluation.
-# Evaluators require: ≥3 tasks with a non-empty grader, and grader score
-# weights strictly inside (0, 1) — not exactly 0.0 or 1.0.
 
-spec_version: 1
 name: shopping-env
-type: space
-runtime: fastapi
-app: server.app:app
-port: 7860
-
 description: AI Shopping Assistant Environment
 version: "0.1.0"
 entry_point: env:ShoppingEnv
-
-scoring:
-  reward_range: [0.01, 0.99]
-  success_threshold: 0.5
+app: server.app:app
+port: 7860
 
 tasks:
   - id: easy
@@ -23,8 +12,11 @@ tasks:
     difficulty: easy
     category: smartphone
     grader:
+      enabled: true
       type: exact_match
       target: "Redmi 9A"
+      correct_score: 0.85
+      incorrect_score: 0.25
       score_if_correct: 0.85
       score_if_wrong: 0.25
 
@@ -33,8 +25,11 @@ tasks:
     difficulty: medium
     category: laptop
     grader:
+      enabled: true
       type: exact_match
       target: "Lenovo IdeaPad 3"
+      correct_score: 0.85
+      incorrect_score: 0.25
       score_if_correct: 0.85
       score_if_wrong: 0.25
 
@@ -43,7 +38,10 @@ tasks:
     difficulty: hard
     category: headphones
     grader:
+      enabled: true
       type: exact_match
       target: "Sony WH-CH510"
+      correct_score: 0.85
+      incorrect_score: 0.25
       score_if_correct: 0.85
       score_if_wrong: 0.25
