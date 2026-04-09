@@ -1,0 +1,12 @@
+# Faster HF builds; avoid copying local venv into the image
+.venv
+venv
+__pycache__
+*.pyc
+.git
+.gitignore
+.pytest_cache
+.mypy_cache
+.cursor
+.idea
+.vscode
