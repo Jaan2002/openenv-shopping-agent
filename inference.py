@@ -97,7 +97,7 @@ def run():
 
                 obs, reward, done, info = env.step(action)
 
-                score = max(0.12, min(0.88, float(reward.score)))
+                score = max(0.01, min(0.99, float(reward.score)))
 
                 rewards.append(f"{score:.2f}")
                 step_count += 1
