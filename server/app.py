@@ -29,6 +29,15 @@ def home():
     return {"message": "Shopping AI Env Running"}
 
 
+@app.get("/metadata")
+def metadata() -> dict[str, Any]:
+    """OpenEnv runtime checks expect name + description as strings."""
+    return {
+        "name": "shopping-env",
+        "description": "AI Shopping Assistant Environment",
+    }
+
+
 @app.get("/health")
 def health() -> dict[str, Any]:
     # OpenEnv runtime validation (openenv validate --url) expects status == "healthy"
