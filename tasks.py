@@ -21,7 +21,9 @@ tasks = [
     # Clear winner: Redmi 9A is within budget AND cheapest                #
     # ------------------------------------------------------------------ #
     {
+        "id": "easy",
         "name": "easy",
+        "difficulty": "easy",
         "category": "smartphone",
         "user_need": "I need a budget smartphone under ₹10,000 for basic calls and WhatsApp.",
         "budget": 10000,
@@ -45,7 +47,9 @@ tasks = [
     # Both within budget; agent must pick by rating, not just price       #
     # ------------------------------------------------------------------ #
     {
+        "id": "medium",
         "name": "medium",
+        "difficulty": "medium",
         "category": "laptop",
         "user_need": "Best-rated laptop for a college student under ₹50,000 for coding and study.",
         "budget": 50000,
@@ -70,7 +74,9 @@ tasks = [
     # less battery and costs more → agent must honour priority correctly  #
     # ------------------------------------------------------------------ #
     {
+        "id": "hard",
         "name": "hard",
+        "difficulty": "hard",
         "category": "headphones",
         "user_need": (
             "Wireless headphones with the longest battery life for travel. "
