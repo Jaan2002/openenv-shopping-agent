@@ -7,6 +7,8 @@ Index only advances AFTER step(), not in reset().
 
 from __future__ import annotations
 
+from typing import ClassVar, List, Any
+
 from models import Observation, Action, Reward, Product
 from tasks import tasks
 
@@ -24,6 +26,9 @@ class ShoppingEnv:
     -----------
     All reward scores are strictly in (0.0, 1.0) — never 0.0 or 1.0.
     """
+
+    
+    TASKS: ClassVar[List[Any]] = tasks
 
     def __init__(self) -> None:
         self.current_task_index: int = 0
@@ -121,7 +126,7 @@ class ShoppingEnv:
 
             score += bonus
 
-        score = round(max(0.12, min(0.88, score)), 2)
+        score = float(round(min(0.99, max(0.01, score)), 4))
 
         info = {
             "optimal": task.get("optimal"),
@@ -148,6 +153,7 @@ class ShoppingEnv:
             "current_task": self.current_task.get("name"),
             "total_tasks": len(tasks),
         }
+
 
 
     @staticmethod
