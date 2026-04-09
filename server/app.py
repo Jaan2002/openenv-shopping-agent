@@ -1,15 +1,65 @@
-from fastapi import FastAPI
+from typing import Any
+
+from fastapi import FastAPI, HTTPException
+
 from env import ShoppingEnv
-from models import Action
 from inference import run
+from models import Action, GradeRequest
+from tasks import tasks
 
 app = FastAPI()
 env = ShoppingEnv()
+
+# Automated evaluation expects scores strictly inside (0, 1), not exactly 0.0 / 1.0.
+SCORE_FLOOR = 0.001
+SCORE_CEILING = 0.999
+
+
+def _strict_score(value: float) -> float:
+    score = round(float(value), 4)
+    if score <= SCORE_FLOOR:
+        return SCORE_FLOOR
+    if score >= SCORE_CEILING:
+        return SCORE_CEILING
+    return score
 
 
 @app.get("/")
 def home():
     return {"message": "Shopping AI Env Running"}
+
+
+@app.get("/health")
+def health() -> dict[str, Any]:
+    return {"status": "ok", "ready": True, "tasks": len(tasks)}
+
+
+@app.get("/tasks")
+def list_tasks() -> list[dict[str, Any]]:
+    """Enumerate tasks + graders (required by Phase-2 style validators)."""
+    out: list[dict[str, Any]] = []
+    for t in tasks:
+        g = t.get("grader") or {}
+        out.append(
+            {
+                "name": t.get("name"),
+                "category": t.get("category"),
+                "difficulty": t.get("name"),
+                "grader": g,
+            }
+        )
+    return out
+
+
+@app.post("/grader")
+def grader(request: GradeRequest) -> dict[str, Any]:
+    """Deterministic grading for a task + action; does not advance env task index."""
+    try:
+        score, details = env.grade(request.task_name, request.action)
+        score = _strict_score(score)
+        return {"score": score, "details": details}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.post("/reset")
