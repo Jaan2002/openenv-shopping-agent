@@ -8,8 +8,9 @@ dependencies = [
   "fastapi",
   "uvicorn",
   "openai",
-  "openenv-core>=0.2.0"
+  "openenv-core[core]>=0.2.2",
 ]
+requires-python = ">=3.10"
 
 [project.scripts]
 server = "server.app:main"
