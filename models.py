@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List
 
 class Product(BaseModel):
@@ -19,4 +19,4 @@ class Action(BaseModel):
     explanation: str  
 
 class Reward(BaseModel):
-    score: float
+    score: float = Field(..., gt=0.0, lt=1.0)
