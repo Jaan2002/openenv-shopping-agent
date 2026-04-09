@@ -92,3 +92,6 @@ tasks = [
         },
     },
 ]
+
+# Alias for tooling that expects an uppercase TASKS export
+TASKS = tasks
