@@ -2,8 +2,7 @@ import os
 import re
 from openai import OpenAI
 from env import ShoppingEnv
-from models import Action
-from tasks import tasks as TASKS
+from models import ShoppingAction
 
 API_BASE_URL = os.getenv("API_BASE_URL", "https://openrouter.ai/api/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:free")
@@ -71,12 +70,12 @@ Selected product: <product name>
         if not selected:
             selected = obs.products[0].name
 
-        return Action(action_type=selected, explanation=output)
+        return ShoppingAction(action_type=selected, explanation=output or "")
 
     except Exception:
-        return Action(
+        return ShoppingAction(
             action_type=obs.products[0].name,
-            explanation="Fallback decision"
+            explanation="Fallback decision",
         )
 
 
@@ -88,7 +87,7 @@ def run():
 
         print(f"[START] task=shopping env=openenv-shopping model={MODEL_NAME}")
 
-        total_tasks = len(TASKS)
+        total_tasks = len(env.TASKS)
 
         for i in range(total_tasks):
             try:
@@ -96,10 +95,10 @@ def run():
 
                 action = get_ai_action(obs)
 
-                obs, reward, done, info = env.step(action)
+                obs = env.step(action)
 
-                # Keep printed rewards strictly inside (0, 1); never "0.00" / "1.00"
-                score = max(0.001, min(0.999, float(reward.score)))
+                reward_val = obs.reward
+                score = max(0.001, min(0.999, float(reward_val) if reward_val is not None else 0.5))
 
                 rewards.append(f"{score:.3f}")
                 step_count += 1
@@ -114,7 +113,7 @@ def run():
 
             except Exception as step_error:
                 step_count += 1
-                rewards.append("0.500")  # strictly inside (0, 1)
+                rewards.append("0.500")
 
                 print(
                     f"[STEP] step={step_count} "
@@ -123,8 +122,6 @@ def run():
                     f"done=true "
                     f"error={str(step_error)}"
                 )
-
-        success = True
 
         print(
             f"[END] success=true "
