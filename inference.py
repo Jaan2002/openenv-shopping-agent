@@ -3,6 +3,7 @@ import re
 from openai import OpenAI
 from env import ShoppingEnv
 from models import Action
+from tasks import tasks as TASKS
 
 API_BASE_URL = os.getenv("API_BASE_URL", "https://openrouter.ai/api/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:free")
@@ -87,7 +88,7 @@ def run():
 
         print(f"[START] task=shopping env=openenv-shopping model={MODEL_NAME}")
 
-        total_tasks = 3  
+        total_tasks = len(TASKS)
 
         for i in range(total_tasks):
             try:
