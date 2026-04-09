@@ -31,7 +31,8 @@ def home():
 
 @app.get("/health")
 def health() -> dict[str, Any]:
-    return {"status": "ok", "ready": True, "tasks": len(tasks)}
+    # OpenEnv runtime validation (openenv validate --url) expects status == "healthy"
+    return {"status": "healthy", "ready": True, "tasks": len(tasks)}
 
 
 @app.get("/tasks")
@@ -42,9 +43,10 @@ def list_tasks() -> list[dict[str, Any]]:
         g = t.get("grader") or {}
         out.append(
             {
+                "id": t.get("id"),
                 "name": t.get("name"),
                 "category": t.get("category"),
-                "difficulty": t.get("name"),
+                "difficulty": t.get("difficulty", t.get("name")),
                 "grader": g,
             }
         )
