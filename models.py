@@ -20,3 +20,10 @@ class Action(BaseModel):
 
 class Reward(BaseModel):
     score: float = Field(..., gt=0.0, lt=1.0)
+
+
+class GradeRequest(BaseModel):
+    """Body for POST /grader — deterministic grading without advancing the task queue."""
+
+    task_name: str
+    action: Action
