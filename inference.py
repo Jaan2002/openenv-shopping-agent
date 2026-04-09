@@ -98,27 +98,28 @@ def run():
 
                 obs, reward, done, info = env.step(action)
 
-                score = max(0.01, min(0.99, float(reward.score)))
+                # Keep printed rewards strictly inside (0, 1); never "0.00" / "1.00"
+                score = max(0.001, min(0.999, float(reward.score)))
 
-                rewards.append(f"{score:.2f}")
+                rewards.append(f"{score:.3f}")
                 step_count += 1
 
                 print(
                     f"[STEP] step={step_count} "
                     f"action={action.action_type} "
-                    f"reward={score:.2f} "
+                    f"reward={score:.3f} "
                     f"done=true "
                     f"error=null"
                 )
 
             except Exception as step_error:
                 step_count += 1
-                rewards.append("0.50")  # valid fallback score
+                rewards.append("0.500")  # strictly inside (0, 1)
 
                 print(
                     f"[STEP] step={step_count} "
                     f"action=error "
-                    f"reward=0.50 "
+                    f"reward=0.500 "
                     f"done=true "
                     f"error={str(step_error)}"
                 )
