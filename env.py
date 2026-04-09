@@ -51,33 +51,20 @@ class ShoppingEnv:
 
    
 
-    def step(self, action: Action):
+    @staticmethod
+    def compute_reward(task: dict, action: Action) -> tuple[float, dict]:
         """
-        Execute one action, compute reward, then advance to next task.
-
-        Parameters
-        ----------
-        action : Action
-            Agent's product selection (action.action_type = product name).
-
-        Returns
-        -------
-        observation : Observation
-        reward      : Reward  — score strictly in (0.0, 1.0)
-        done        : bool    — always True (single-step episodes)
-        info        : dict    — diagnostics
+        Deterministic reward for (task, action). Used by step() and by POST /grader.
+        Does not mutate environment state.
         """
-        task = self.current_task
         products = task["products"]
         grader = task.get("grader", {})
 
-        # ── Find selected product (case-insensitive) ───────────────────
         selected = None
         for p in products:
             if p["name"].strip().lower() == action.action_type.strip().lower():
                 selected = p
                 break
-
 
         breakdown: dict = {}
 
@@ -96,7 +83,6 @@ class ShoppingEnv:
                 breakdown["reason"] = "suboptimal"
 
             breakdown["base"] = score
-
 
             bonus = 0.0
 
@@ -134,8 +120,34 @@ class ShoppingEnv:
             "score_breakdown": breakdown,
             "task_name": task.get("name"),
         }
+        return score, info
 
-   
+    def grade(self, task_name: str, action: Action) -> tuple[float, dict]:
+        """Run grader for a named task without advancing current_task_index."""
+        for t in tasks:
+            if t.get("name") == task_name:
+                return self.compute_reward(t, action)
+        raise ValueError(f"Unknown task_name: {task_name}")
+
+    def step(self, action: Action):
+        """
+        Execute one action, compute reward, then advance to next task.
+
+        Parameters
+        ----------
+        action : Action
+            Agent's product selection (action.action_type = product name).
+
+        Returns
+        -------
+        observation : Observation
+        reward      : Reward  — score strictly in (0.0, 1.0)
+        done        : bool    — always True (single-step episodes)
+        info        : dict    — diagnostics
+        """
+        task = self.current_task
+        score, info = self.compute_reward(task, action)
+
         self.current_task_index += 1
 
         return (
