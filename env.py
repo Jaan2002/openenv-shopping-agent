@@ -76,10 +76,14 @@ class ShoppingEnv:
             is_optimal = selected["name"] == optimal_name
 
             if is_optimal:
-                score = grader.get("score_if_correct", 0.75)
+                score = grader.get("score_if_correct")
+                if score is None:
+                    score = grader.get("correct_score", 0.75)
                 breakdown["reason"] = "optimal_match"
             else:
-                score = grader.get("score_if_wrong", 0.30)
+                score = grader.get("score_if_wrong")
+                if score is None:
+                    score = grader.get("incorrect_score", 0.30)
                 breakdown["reason"] = "suboptimal"
 
             breakdown["base"] = score
