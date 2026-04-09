@@ -1,3 +1,6 @@
+import logging
+import os
+import threading
 from typing import Any
 
 from fastapi import Body, FastAPI, HTTPException
@@ -14,7 +17,6 @@ from openenv.core.env_server.types import (
 )
 
 from env import ShoppingEnv
-from inference import run
 from models import GradeRequest, ShoppingAction, ShoppingObservation
 from tasks import tasks
 
@@ -142,9 +144,34 @@ def state_endpoint() -> State:
     )
 
 
+def _inference_thread_target() -> None:
+    """Runs shopping inference after the server is accepting traffic (logs for eval harness)."""
+    try:
+        from inference import run
+
+        run()
+    except Exception:
+        logging.exception("Background inference failed")
+
+
 @app.on_event("startup")
-def run_inference_on_start():
-    run()
+def run_inference_on_start() -> None:
+    """
+    Do not block startup: Hugging Face Spaces wait for the process to listen on PORT.
+    Synchronous LLM inference would keep the app in 'Building/Loading' forever.
+    """
+    if os.getenv("RUN_INFERENCE_ON_STARTUP", "true").lower() not in (
+        "1",
+        "true",
+        "yes",
+    ):
+        return
+    t = threading.Thread(
+        target=_inference_thread_target,
+        name="openenv-inference",
+        daemon=True,
+    )
+    t.start()
 
 
 def main():
