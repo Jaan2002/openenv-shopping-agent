@@ -1,8 +1,21 @@
+# OpenEnv manifest (spec v1) + task graders for automated evaluation.
+# Evaluators require: ≥3 tasks with a non-empty grader, and grader score
+# weights strictly inside (0, 1) — not exactly 0.0 or 1.0.
+
+spec_version: 1
 name: shopping-env
+type: space
+runtime: fastapi
+app: server.app:app
+port: 7860
+
 description: AI Shopping Assistant Environment
-version: 0.1.0
+version: "0.1.0"
 entry_point: env:ShoppingEnv
 
+scoring:
+  reward_range: [0.01, 0.99]
+  success_threshold: 0.5
 
 tasks:
   - id: easy
