@@ -1,33 +1,21 @@
 """
-ShoppingEnv — OpenEnv-compliant AI Shopping Assistant Environment
-=================================================================
-Each episode: reset() → step(action) → reward
-Index only advances AFTER step(), not in reset().
+ShoppingEnv — OpenEnv-style shopping assistant (singleton-friendly).
+
+reset() → step(action) advances the rotating task list. Rewards live on
+ShoppingObservation.reward in (0, 1), exclusive of 0.0 and 1.0 after clamping.
 """
 
 from __future__ import annotations
 
-from typing import ClassVar, List, Any
+from typing import Any, ClassVar, List
 
-from models import Observation, Action, Reward, Product
+from models import ShoppingAction, ShoppingObservation, Product
 from tasks import tasks
 
 
 class ShoppingEnv:
-    """
-    OpenEnv environment for multi-criteria AI shopping decisions.
+    """Stateful environment; use one shared instance behind the FastAPI server."""
 
-    Correct episode flow
-    --------------------
-    obs = env.reset()        # loads current task, does NOT advance index
-    obs, reward, done, info = env.step(action)  # scores + advances index
-
-    Score range
-    -----------
-    All reward scores are strictly in (0.0, 1.0) — never 0.0 or 1.0.
-    """
-
-    
     TASKS: ClassVar[List[Any]] = tasks
 
     def __init__(self) -> None:
@@ -35,28 +23,17 @@ class ShoppingEnv:
         self.current_task: dict = tasks[0]
         self._episode_count: int = 0
 
-
-    def reset(self) -> Observation:
-        """
-        Load the current task and return its observation.
-        Does NOT advance the task index — that happens in step().
-        """
+    def reset(self) -> ShoppingObservation:
         if self.current_task_index >= len(tasks):
             self.current_task_index = 0
 
         self.current_task = tasks[self.current_task_index]
         self._episode_count += 1
 
-        return self._build_observation(self.current_task)
-
-   
+        return self._build_observation(self.current_task, done=False, reward=None)
 
     @staticmethod
-    def compute_reward(task: dict, action: Action) -> tuple[float, dict]:
-        """
-        Deterministic reward for (task, action). Used by step() and by POST /grader.
-        Does not mutate environment state.
-        """
+    def compute_reward(task: dict, action: ShoppingAction) -> tuple[float, dict]:
         products = task["products"]
         grader = task.get("grader", {})
 
@@ -126,41 +103,20 @@ class ShoppingEnv:
         }
         return score, info
 
-    def grade(self, task_name: str, action: Action) -> tuple[float, dict]:
-        """Run grader for a named task without advancing current_task_index."""
+    def grade(self, task_name: str, action: ShoppingAction) -> tuple[float, dict]:
         for t in tasks:
             if t.get("name") == task_name:
                 return self.compute_reward(t, action)
         raise ValueError(f"Unknown task_name: {task_name}")
 
-    def step(self, action: Action):
-        """
-        Execute one action, compute reward, then advance to next task.
-
-        Parameters
-        ----------
-        action : Action
-            Agent's product selection (action.action_type = product name).
-
-        Returns
-        -------
-        observation : Observation
-        reward      : Reward  — score strictly in (0.0, 1.0)
-        done        : bool    — always True (single-step episodes)
-        info        : dict    — diagnostics
-        """
+    def step(self, action: ShoppingAction) -> ShoppingObservation:
         task = self.current_task
         score, info = self.compute_reward(task, action)
-
         self.current_task_index += 1
 
-        return (
-            self._build_observation(task),
-            Reward(score=score),
-            True,
-            info,
-        )
-
+        obs = self._build_observation(task, done=True, reward=score)
+        meta = {**obs.metadata, "info": info}
+        return obs.model_copy(update={"metadata": meta})
 
     def state(self) -> dict:
         return {
@@ -170,14 +126,20 @@ class ShoppingEnv:
             "total_tasks": len(tasks),
         }
 
-
-
     @staticmethod
-    def _build_observation(task: dict) -> Observation:
-        return Observation(
-            category=task["category"],
+    def _build_observation(
+        task: dict,
+        *,
+        done: bool,
+        reward: float | None,
+    ) -> ShoppingObservation:
+        return ShoppingObservation(
+            done=done,
+            reward=reward,
+            metadata={},
             user_need=task["user_need"],
             budget=task["budget"],
+            category=task["category"],
             priority=task["priority"],
             products=[Product(**p) for p in task["products"]],
         )
