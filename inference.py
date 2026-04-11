@@ -3,12 +3,19 @@ from openai import OpenAI
 from env import ShoppingEnv
 from models import Action
 
-API_BASE_URL = os.getenv("API_BASE_URL", "https://openrouter.ai/api/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:free")
-HF_TOKEN = os.getenv("HF_TOKEN")
 
-client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
+API_BASE_URL = os.getenv("API_BASE_URL", "https://openrouter.ai/api/v1")
 
+API_KEY = os.getenv("API_KEY") or os.getenv("HF_TOKEN")
+
+if API_KEY is None:
+    raise ValueError("API_KEY or HF_TOKEN is required")
+
+client = OpenAI(
+    base_url=API_BASE_URL,
+    api_key=API_KEY
+)
 
 def run():
     env = ShoppingEnv()
