@@ -34,11 +34,6 @@ def run():
     steps = 0
 
     
-    correct_actions = {
-        "easy": "Redmi 9A",
-        "medium": "Lenovo IdeaPad 3",
-        "hard": "Sony WH-CH510"
-    }
 
     for i, task in enumerate(["easy", "medium", "hard"], start=1):
 
@@ -48,8 +43,8 @@ def run():
 
         
         action = Action(
-            action_type=correct_actions[task],
-            explanation="deterministic"
+            action_type=obs.products[0].name,
+            explanation="fallback"
         )
 
         obs, reward, done, _ = env.step(action)
