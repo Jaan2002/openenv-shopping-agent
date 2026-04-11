@@ -1,51 +1,5 @@
-
-spec_version: 1
-name: shopping_env
-type: space
-runtime: fastapi
-app: server.app:app
-port: 8000
-
+name: shopping-env
 description: AI Shopping Assistant Environment
-version: "0.1.0"
+version: 0.1.0
 entry_point: env:ShoppingEnv
-
-tasks:
-  - id: easy
-    name: easy
-    difficulty: easy
-    category: smartphone
-    grader:
-      enabled: true
-      type: exact_match
-      target: "Redmi 9A"
-      correct_score: 0.85
-      incorrect_score: 0.25
-      score_if_correct: 0.85
-      score_if_wrong: 0.25
-
-  - id: medium
-    name: medium
-    difficulty: medium
-    category: laptop
-    grader:
-      enabled: true
-      type: exact_match
-      target: "Lenovo IdeaPad 3"
-      correct_score: 0.85
-      incorrect_score: 0.25
-      score_if_correct: 0.85
-      score_if_wrong: 0.25
-
-  - id: hard
-    name: hard
-    difficulty: hard
-    category: headphones
-    grader:
-      enabled: true
-      type: exact_match
-      target: "Sony WH-CH510"
-      correct_score: 0.85
-      incorrect_score: 0.25
-      score_if_correct: 0.85
-      score_if_wrong: 0.25
+  
