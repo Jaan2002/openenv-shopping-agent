@@ -4,7 +4,7 @@ from env import ShoppingEnv
 from models import Action
 
 API_BASE_URL = os.getenv("API_BASE_URL")
-API_KEY = os.getenv("API_KEY") or os.getenv("HF_TOKEN")
+API_KEY = os.getenv("API_KEY") 
 MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:free")
 
 client = OpenAI(
@@ -24,11 +24,25 @@ def run():
 
         obs = env.reset(task_id=task)
 
-        action = Action(
-            action_type=obs.products[0].name,
-            explanation="fallback"
-        )
+       response = client.chat.completions.create(
+       model=MODEL_NAME,
+        messages=[
+        {
+            "role": "system",
+            "content": "You are a shopping assistant. Choose the best product from the list."
+        },
+        {
+            "role": "user",
+            "content": f"Available products: {[p.name for p in obs.products]}"
+        }
+    ]
+)
+          llm_output = response.choices[0].message.content.strip()
 
+          action = Action(
+          action_type=llm_output,
+          explanation="chosen by llm"
+           )
         obs, reward, done, _ = env.step(action)
 
         score = max(0.01, min(0.99, reward.score))
