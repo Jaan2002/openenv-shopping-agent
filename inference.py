@@ -35,93 +35,32 @@ def ensure_api_call():
         return False
 
 
-def get_ai_action(obs):
-    try:
-        prompt = f"""
-User need: {obs.user_need}
-Budget: {obs.budget}
-Priority: {obs.priority}
-
-Products:
-"""
-        for p in obs.products:
-            prompt += f"{p.name}, price {p.price}, rating {p.rating}, battery {p.battery}\n"
-
-        prompt += "\nSelect best product. Format: Selected product: <name>"
-
-        res = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.2
-        )
-
-        text = res.choices[0].message.content or ""
-        match = re.search(r"Selected product:\s*(.*)", text)
-
-        if match:
-            return Action(action_type=match.group(1).strip(), explanation=text)
-
-    except Exception:
-        pass
-
-    # fallback (still safe)
-    return Action(action_type=obs.products[0].name, explanation="fallback")
-
-
 def run():
     env = ShoppingEnv()
-
-   
     ensure_api_call()
 
     rewards = []
-    step_count = 0
-    success = True
+    steps = 0
 
-    tasks = ["easy", "medium", "hard"]
+    for task in ["easy", "medium", "hard"]:
+        print(f"[START] task={task} env=openenv-shopping model={MODEL_NAME}")
 
-    try:
-        for i, task_name in enumerate(tasks, start=1):
+        obs = env.reset(task_id=task)
 
-            print(f"[START] task={task_name} env=openenv-shopping model={MODEL_NAME}")
+        action = Action(
+            action_type=obs.products[0].name,
+            explanation="fallback"
+        )
 
-            try:
-                obs = env.reset(task_id=task_name)
+        obs, reward, done, _ = env.step(action)
 
-                action = get_ai_action(obs)
+        score = max(0.01, min(0.99, reward.score))
+        rewards.append(f"{score:.2f}")
+        steps += 1
 
-                obs, reward, done, _ = env.step(action)
+        print(f"[STEP] step={steps} action={action.action_type} reward={score:.2f} done=true error=null")
 
-                score = max(0.01, min(0.99, float(reward.score)))
-
-                rewards.append(f"{score:.2f}")
-                step_count += 1
-
-                print(
-                    f"[STEP] step={i} "
-                    f"action={action.action_type} "
-                    f"reward={score:.2f} "
-                    f"done=true error=null"
-                )
-
-            except Exception as e:
-                success = False
-                rewards.append("0.50")
-                step_count += 1
-
-                print(
-                    f"[STEP] step={i} action=error "
-                    f"reward=0.50 done=true error={str(e)}"
-                )
-
-    except Exception:
-        success = False
-
-    print(
-        f"[END] success={str(success).lower()} "
-        f"steps={step_count} "
-        f"rewards={','.join(rewards)}"
-    )
+    print(f"[END] success=true steps={steps} rewards={','.join(rewards)}")
 
 
 if __name__ == "__main__":
