@@ -9,12 +9,9 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "pydantic",
-    "openai"
+    "openai",
+    "openenv-core>=0.2.0"
 ]
 
 [project.scripts]
-server = "server.app:main"
-
-[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+server = "shopping_env.server.app:main"
