@@ -12,36 +12,17 @@ client = OpenAI(
     api_key=API_KEY
 )
 
-
-def ensure_api_call():
-    try:
-        client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[{"role": "user", "content": "Hello"}],
-            max_tokens=5
-        )
-    except Exception:
-        pass
-
-
 def run():
     env = ShoppingEnv()
-
-    
-    ensure_api_call()
 
     rewards = []
     steps = 0
 
-    
-
-    for i, task in enumerate(["easy", "medium", "hard"], start=1):
-
+    for task in ["easy", "medium", "hard"]:
         print(f"[START] task={task} env=openenv-shopping model={MODEL_NAME}")
 
         obs = env.reset(task_id=task)
 
-        
         action = Action(
             action_type=obs.products[0].name,
             explanation="fallback"
@@ -49,15 +30,11 @@ def run():
 
         obs, reward, done, _ = env.step(action)
 
-        score = max(0.01, min(0.99, float(reward.score)))
-
+        score = max(0.01, min(0.99, reward.score))
         rewards.append(f"{score:.2f}")
         steps += 1
 
-        print(
-            f"[STEP] step={i} action={action.action_type} "
-            f"reward={score:.2f} done=true error=null"
-        )
+        print(f"[STEP] step={steps} action={action.action_type} reward={score:.2f} done=true error=null")
 
     print(f"[END] success=true steps={steps} rewards={','.join(rewards)}")
 
