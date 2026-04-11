@@ -1,21 +1,17 @@
 ---
 name: shopping-env
-description: AI Shopping Assistant Environment
 version: 0.1.0
 spec_version: v1
 
 environment:
-  entry_point: env:ShoppingEnv
+  entry_point: shopping_env.env:ShoppingEnv
 
 tasks:
   - id: easy
-    description: Easy shopping task
-    grader: server.grader:grade_easy
+    grader: shopping_env.server.grader:grade_easy
 
   - id: medium
-    description: Medium shopping task
-    grader: server.grader:grade_medium
+    grader: shopping_env.server.grader:grade_medium
 
   - id: hard
-    description: Hard shopping task
-    grader: server.grader:grade_hard
+    grader: shopping_env.server.grader:grade_hard
