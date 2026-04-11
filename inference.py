@@ -12,20 +12,10 @@ client = OpenAI(
     api_key=API_KEY
 )
 
-def ensure_api_call():
-    try:
-        client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[{"role": "user", "content": "Hello"}],
-            max_tokens=5
-        )
-    except Exception:
-        pass
 
 def run():
     env = ShoppingEnv()
 
-    ensure_api_call()
     rewards = []
     steps = 0
 
