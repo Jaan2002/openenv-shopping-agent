@@ -5,7 +5,7 @@ from models import Action
 
 API_BASE_URL = os.getenv("API_BASE_URL")
 API_KEY = os.getenv("API_KEY") 
-MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:free")
+MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
 
 client = OpenAI(
     base_url=API_BASE_URL,
@@ -15,6 +15,7 @@ client = OpenAI(
 
 def run():
     env = ShoppingEnv()
+    
 
     rewards = []
     steps = 0
@@ -24,25 +25,39 @@ def run():
 
         obs = env.reset(task_id=task)
 
-       response = client.chat.completions.create(
-       model=MODEL_NAME,
+        try:
+    response = client.chat.completions.create(
+        model=MODEL_NAME,
         messages=[
-        {
-            "role": "system",
-            "content": "You are a shopping assistant. Choose the best product from the list."
-        },
-        {
-            "role": "user",
-            "content": f"Available products: {[p.name for p in obs.products]}"
-        }
-    ]
-)
-          llm_output = response.choices[0].message.content.strip()
+            {
+                "role": "system",
+                "content": "You are a shopping assistant. Choose the best product from the list."
+            },
+            {
+                "role": "user",
+                "content": f"Available products: {[p.name for p in obs.products]}"
+            }
+        ]
+    )
 
-          action = Action(
-          action_type=llm_output,
-          explanation="chosen by llm"
-           )
+    llm_output = response.choices[0].message.content.strip()
+
+    # fallback if empty
+    if not llm_output:
+        llm_output = obs.products[0].name
+
+except Exception as e:
+    print(f"[ERROR] LLM call failed: {e}")
+
+    
+    llm_output = obs.products[0].name
+
+
+action = Action(
+    action_type=llm_output,
+    explanation="llm or fallback"
+)
+
         obs, reward, done, _ = env.step(action)
 
         score = max(0.01, min(0.99, reward.score))
