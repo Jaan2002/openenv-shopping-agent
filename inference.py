@@ -23,8 +23,8 @@ def run():
         obs = env.reset(task_id=task)
 
         action = Action(
-            action_type=llm_output,
-            explanation="llm or fallback"
+            action_type=obs.products[0].name,
+            explanation="fallback"
         )
 
         obs, reward, done, _ = env.step(action)
