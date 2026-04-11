@@ -1,20 +1,4 @@
 [project]
-name = "shopping-ai-env"
+name = "shopping_env"
 version = "0.1.0"
-description = "AI-powered shopping environment for OpenEnv evaluation"
-authors = [{ name = "Jaanvi Kapoor" }]
-
-
-dependencies = [
-    "fastapi",
-    "uvicorn",
-    "pydantic",
-    "openai"
-]
-
-[project.scripts]
-server = "server.app:main"
-
-[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+dependencies = ["fastapi", "uvicorn", "pydantic", "openai"]
