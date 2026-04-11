@@ -22,30 +22,6 @@ def run():
 
         obs = env.reset(task_id=task)
 
-        try:
-            response = client.chat.completions.create(
-                model=MODEL_NAME,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are a shopping assistant. Choose the best product from the list."
-                    },
-                    {
-                        "role": "user",
-                        "content": f"Available products: {[p.name for p in obs.products]}"
-                    }
-                ]
-            )
-
-            llm_output = response.choices[0].message.content.strip()
-
-            if not llm_output:
-                llm_output = obs.products[0].name
-
-        except Exception as e:
-            print(f"[ERROR] LLM call failed: {e}")
-            llm_output = obs.products[0].name
-
         action = Action(
             action_type=llm_output,
             explanation="llm or fallback"
