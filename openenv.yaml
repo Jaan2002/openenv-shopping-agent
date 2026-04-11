@@ -7,13 +7,10 @@ entry_point: env:ShoppingEnv
 
 tasks:
   - id: easy
-    description: Budget smartphone selection task
     grader: server.grader:grade_easy
 
   - id: medium
-    description: Laptop selection based on rating and budget
     grader: server.grader:grade_medium
 
   - id: hard
-    description: Headphones selection based on battery and budget
     grader: server.grader:grade_hard
