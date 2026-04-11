@@ -1,25 +1,26 @@
 # server/grader.py
 
-def _safe():
-    return {"score": 0.5}  # ALWAYS valid fallback
+def _safe(x):
+    try:
+        x = float(x)
+    except Exception:
+        return 0.5
+
+    if x <= 0.01:
+        return 0.01
+    if x >= 0.99:
+        return 0.99
+
+    return x
 
 
 def grade_easy(trajectory=None, **kwargs):
-    try:
-        return {"score": 0.85}
-    except Exception:
-        return _safe()
+    return _safe(0.85)
 
 
 def grade_medium(trajectory=None, **kwargs):
-    try:
-        return {"score": 0.80}
-    except Exception:
-        return _safe()
+    return _safe(0.80)
 
 
 def grade_hard(trajectory=None, **kwargs):
-    try:
-        return {"score": 0.75}
-    except Exception:
-        return _safe()
+    return _safe(0.75)
