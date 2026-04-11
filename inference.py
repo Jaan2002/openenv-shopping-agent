@@ -4,7 +4,7 @@ from openai import OpenAI
 from env import ShoppingEnv
 from models import Action
 
-# 🔥 IMPORTANT: DO NOT hardcode defaults
+
 API_BASE_URL = os.getenv("API_BASE_URL")
 API_KEY = os.getenv("API_KEY") or os.getenv("HF_TOKEN")
 MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:free")
@@ -21,7 +21,7 @@ client = OpenAI(
 )
 
 
-# 🔥 FORCE ONE SUCCESSFUL API CALL (CRITICAL FOR VALIDATOR)
+
 def ensure_api_call():
     try:
         res = client.chat.completions.create(
@@ -71,7 +71,7 @@ Products:
 def run():
     env = ShoppingEnv()
 
-    # 🔥 CRITICAL: ensure at least one API call
+   
     ensure_api_call()
 
     rewards = []
