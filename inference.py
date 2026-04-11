@@ -2,30 +2,25 @@ import os
 import re
 from openai import OpenAI
 from env import ShoppingEnv
-from models import ShoppingAction
+from models import Action
 
+# REQUIRED ENV VARIABLES
 API_BASE_URL = os.getenv("API_BASE_URL", "https://openrouter.ai/api/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:free")
 HF_TOKEN = os.getenv("HF_TOKEN")
 
-client = None
-if HF_TOKEN:
-    try:
-        client = OpenAI(
-            base_url=API_BASE_URL,
-            api_key=HF_TOKEN
-        )
-    except Exception:
-        client = None
+if HF_TOKEN is None:
+    raise ValueError("HF_TOKEN environment variable is required")
+
+client = OpenAI(
+    base_url=API_BASE_URL,
+    api_key=HF_TOKEN
+)
 
 
 def get_ai_action(obs):
     try:
-        if client is None:
-            raise Exception("No API client available")
-
         prompt = f"""
-Category: {obs.category}
 User need: {obs.user_need}
 Budget: {obs.budget}
 Priority: {obs.priority}
@@ -36,101 +31,61 @@ Products:
         for p in obs.products:
             prompt += f"{p.name}, price {p.price}, rating {p.rating}, battery {p.battery}\n"
 
-        prompt += """
-Choose the best product.
+        prompt += "\nSelect best product. Format: Selected product: <name>"
 
-Start your response EXACTLY like:
-Selected product: <product name>
-"""
-
-        response = client.chat.completions.create(
+        res = client.chat.completions.create(
             model=MODEL_NAME,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2
         )
 
-        output = response.choices[0].message.content
+        text = res.choices[0].message.content or ""
 
-        selected = None
-        match = re.search(r"Selected product:\s*(.*)", output, re.IGNORECASE)
-
+        match = re.search(r"Selected product:\s*(.*)", text)
         if match:
-            extracted = match.group(1).strip()
-            for p in obs.products:
-                if p.name.lower() in extracted.lower():
-                    selected = p.name
-                    break
-
-        if not selected:
-            for p in obs.products:
-                if p.name.lower() in output.lower():
-                    selected = p.name
-                    break
-
-        if not selected:
-            selected = obs.products[0].name
-
-        return ShoppingAction(action_type=selected, explanation=output or "")
+            return Action(action_type=match.group(1).strip(), explanation=text)
 
     except Exception:
-        return ShoppingAction(
-            action_type=obs.products[0].name,
-            explanation="Fallback decision",
-        )
+        pass
+
+    return Action(action_type=obs.products[0].name, explanation="fallback")
 
 
 def run():
+    env = ShoppingEnv()
+
+    print(f"[START] task=shopping env=openenv-shopping model={MODEL_NAME}")
+
+    rewards = []
+    step_count = 0
+    success = True
+
     try:
-        env = ShoppingEnv()
-        rewards = []
-        step_count = 0
+        for step in range(1, 4):
+            obs = env.reset()
 
-        print(f"[START] task=shopping env=openenv-shopping model={MODEL_NAME}")
+            action = get_ai_action(obs)
 
-        total_tasks = len(env.TASKS)
+            obs, reward, done, _ = env.step(action)
 
-        for i in range(total_tasks):
-            try:
-                obs = env.reset()
+            score = max(0.01, min(0.99, reward.score))
+            rewards.append(f"{score:.2f}")
+            step_count = step
 
-                action = get_ai_action(obs)
-
-                obs = env.step(action)
-
-                reward_val = obs.reward
-                score = max(0.001, min(0.999, float(reward_val) if reward_val is not None else 0.5))
-
-                rewards.append(f"{score:.3f}")
-                step_count += 1
-
-                print(
-                    f"[STEP] step={step_count} "
-                    f"action={action.action_type} "
-                    f"reward={score:.3f} "
-                    f"done=true "
-                    f"error=null"
-                )
-
-            except Exception as step_error:
-                step_count += 1
-                rewards.append("0.500")
-
-                print(
-                    f"[STEP] step={step_count} "
-                    f"action=error "
-                    f"reward=0.500 "
-                    f"done=true "
-                    f"error={str(step_error)}"
-                )
-
-        print(
-            f"[END] success=true "
-            f"steps={step_count} "
-            f"rewards={','.join(rewards)}"
-        )
+            print(
+                f"[STEP] step={step} action={action.action_type} "
+                f"reward={score:.2f} done=true error=null"
+            )
 
     except Exception as e:
-        print(f"[END] success=false steps=0 rewards= error={str(e)}")
+        success = False
+
+    print(
+        f"[END] success={str(success).lower()} "
+        f"steps={step_count} "
+        f"rewards={','.join(rewards)}"
+    )
+
 
 if __name__ == "__main__":
     run()
