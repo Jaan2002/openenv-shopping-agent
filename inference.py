@@ -27,7 +27,6 @@ Priority: {obs.priority}
 
 Products:
 """
-
         for p in obs.products:
             prompt += f"{p.name}, price {p.price}, rating {p.rating}, battery {p.battery}\n"
 
@@ -40,41 +39,50 @@ Products:
         )
 
         text = res.choices[0].message.content or ""
-
         match = re.search(r"Selected product:\s*(.*)", text)
+
         if match:
             return Action(action_type=match.group(1).strip(), explanation=text)
 
     except Exception:
         pass
 
+    # fallback
     return Action(action_type=obs.products[0].name, explanation="fallback")
 
 
 def run():
     env = ShoppingEnv()
 
-    print(f"[START] task=shopping env=openenv-shopping model={MODEL_NAME}")
-
     rewards = []
     step_count = 0
     success = True
 
-    try:
-        for step in range(1, 4):
-            obs = env.reset()
+    tasks = ["easy", "medium", "hard"]
 
+    try:
+        for i, task_name in enumerate(tasks, start=1):
+
+            
+            print(f"[START] task={task_name} env=openenv-shopping model={MODEL_NAME}")
+
+            obs = env.reset()
             action = get_ai_action(obs)
 
             obs, reward, done, _ = env.step(action)
 
-            score = max(0.01, min(0.99, reward.score))
+            
+            score = max(0.01, min(0.99, float(reward.score)))
+
             rewards.append(f"{score:.2f}")
-            step_count = step
+            step_count += 1
 
             print(
-                f"[STEP] step={step} action={action.action_type} "
-                f"reward={score:.2f} done=true error=null"
+                f"[STEP] step={i} "
+                f"action={action.action_type} "
+                f"reward={score:.2f} "
+                f"done=true "
+                f"error=null"
             )
 
     except Exception as e:
