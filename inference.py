@@ -10,6 +10,7 @@ client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
 BASE_URL = "https://jaanvi786-shopping-ai-env.hf.space"
 
+
 def run():
     rewards = []
     steps = 0
@@ -23,7 +24,7 @@ def run():
     for i, task in enumerate(["easy", "medium", "hard"]):
         print(f"[START] task={task} env=openenv-shopping model={MODEL_NAME}")
 
-        
+        # RESET
         requests.post(f"{BASE_URL}/reset")
 
         
@@ -42,11 +43,7 @@ def run():
             json={"action": {"product": actions[i]}}
         ).json()
 
-        reward = res.get("reward", 0.5)
-
-        if isinstance(reward, dict):
-            reward = reward.get("value", 0.5)
-
+        reward = res.get("reward", {}).get("value", 0.5)
         reward = max(0.01, min(0.99, float(reward)))
 
         rewards.append(f"{reward:.2f}")
@@ -58,6 +55,7 @@ def run():
         )
 
     print(f"[END] success=true steps={steps} rewards={','.join(rewards)}")
+
 
 if __name__ == "__main__":
     run()
