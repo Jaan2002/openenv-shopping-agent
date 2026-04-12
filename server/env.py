@@ -1,5 +1,4 @@
 from openenv.core.env_server import Environment
-from models import Action, Observation, State
 
 
 class ShoppingEnv(Environment):
@@ -24,35 +23,48 @@ class ShoppingEnv(Environment):
 
         return float(f"{x:.2f}")
 
+    # 🔥 RESET
     def reset(self, *args, **kwargs):
         self.idx = (self.idx + 1) % len(self.tasks)
         query, _, _ = self.tasks[self.idx]
 
-        return Observation(
-            query=query,
-            done=False,
-            reward=0.5
-        )
+        return {
+            "observation": {
+                "query": query
+            },
+            "reward": {
+                "value": 0.5
+            },
+            "done": False,
+            "info": {}
+        }
 
-    def step(self, action: Action, **kwargs):
+    # 🔥 STEP
+    def step(self, action, **kwargs):
         _, correct, base_reward = self.tasks[self.idx]
 
-        if action.product.strip() == correct:
+        user_action = action.get("product", "").strip()
+
+        if user_action == correct:
             reward = base_reward
         else:
-            reward = 0.5   # NEVER 0
+            reward = 0.5
 
         reward = self._safe(reward)
 
-        return Observation(
-            query="",
-            done=True,
-            reward=reward
-        )
+        return {
+            "observation": {
+                "query": ""
+            },
+            "reward": {
+                "value": reward
+            },
+            "done": True,
+            "info": {}
+        }
 
-    @property
     def state(self):
-        return State()
+        return {}
 
     def close(self):
         pass
