@@ -1,26 +1,13 @@
-from pydantic import BaseModel
-from typing import List
+from openenv.core.env_server import Action, Observation, State
 
 
-class Product(BaseModel):
-    name: str
-    price: float
-    rating: float
-    battery: int
+class TaskAction(Action):
+    product: str
 
 
-class Observation(BaseModel):
-    user_need: str
-    budget: float
-    category: str
-    priority: str
-    products: List[Product]
+class TaskObservation(Observation):
+    query: str
 
 
-class Action(BaseModel):
-    action_type: str
-    explanation: str
-
-
-class Reward(BaseModel):
-    score: float
+class TaskState(State):
+    pass
