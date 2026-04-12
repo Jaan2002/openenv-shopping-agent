@@ -1,17 +1,13 @@
----
-name: shopping-env
-version: 0.1.0
-spec_version: v1
+version: "1.0"
 
-environment:
-  entry_point: shopping_env.env:ShoppingEnv
+name: "shopping-env"
 
 tasks:
   - id: easy
-    grader: shopping_env.server.grader:grade_easy
+    grader: server.environment:grade_easy
 
   - id: medium
-    grader: shopping_env.server.grader:grade_medium
+    grader: server.environment:grade_medium
 
   - id: hard
-    grader: shopping_env.server.grader:grade_hard
+    grader: server.environment:grade_hard
