@@ -27,7 +27,7 @@ def run():
         # RESET
         requests.post(f"{BASE_URL}/reset")
 
-        
+        # 🔥 API CALL (MANDATORY)
         try:
             client.chat.completions.create(
                 model=MODEL_NAME,
@@ -37,7 +37,7 @@ def run():
         except:
             pass
 
-       
+        # STEP
         res = requests.post(
             f"{BASE_URL}/step",
             json={"action": {"product": actions[i]}}
