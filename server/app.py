@@ -1,38 +1,16 @@
-from fastapi import FastAPI
-from env import ShoppingEnv
-from models import Action
+from openenv.core.env_server import create_fastapi_app
+from server.environment import ShoppingEnv, TaskAction, TaskObservation
 
-app = FastAPI()
-env = ShoppingEnv()
+app = create_fastapi_app(
+    ShoppingEnv,
+    TaskAction,
+    TaskObservation
+)
 
-@app.get("/")
-def home():
-    return {"message": "Running"}
 
-@app.post("/reset")
-def reset():
-    return env.reset().model_dump()
-
-@app.post("/step")
-def step(action: dict):
-    act = Action(**action)
-    obs, reward, done, _ = env.step(act)
-
-    return {
-        "observation": obs.model_dump(),
-        "reward": reward.score,
-        "done": done
-    }
-
-@app.get("/state")
-def state():
-    return env.state()
 def main():
-    import os
     import uvicorn
-
-    port = int(os.getenv("PORT", "7860")) 
-    uvicorn.run("server.app:app", host="0.0.0.0", port=port)
+    uvicorn.run("server.app:app", host="0.0.0.0", port=7860)
 
 
 if __name__ == "__main__":
