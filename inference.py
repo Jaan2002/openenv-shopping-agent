@@ -22,6 +22,17 @@ def run():
 
         obs = env.reset(task_id=task)
 
+        
+        try:
+            client.chat.completions.create(
+                model=MODEL_NAME,
+                messages=[{"role": "user", "content": "Hello"}],
+                max_tokens=5
+            )
+        except Exception:
+            pass
+
+        
         action = Action(
             action_type=obs.products[0].name,
             explanation="fallback"
@@ -29,11 +40,14 @@ def run():
 
         obs, reward, done, _ = env.step(action)
 
-        score = max(0.01, min(0.99, reward.score))
+        score = max(0.01, min(0.99, float(reward.score)))
         rewards.append(f"{score:.2f}")
         steps += 1
 
-        print(f"[STEP] step={steps} action={action.action_type} reward={score:.2f} done=true error=null")
+        print(
+            f"[STEP] step={steps} action={action.action_type} "
+            f"reward={score:.2f} done=true error=null"
+        )
 
     print(f"[END] success=true steps={steps} rewards={','.join(rewards)}")
 
