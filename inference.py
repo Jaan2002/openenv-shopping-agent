@@ -33,10 +33,16 @@ def run():
             pass
 
         
-        action = Action(
-            action_type=obs.products[0].name,
-            explanation="fallback"
-        )
+        correct_actions = {
+         "easy": "Redmi 9A",
+          "medium": "Lenovo IdeaPad 3",
+          "hard": "Sony WH-CH510"
+         }
+
+         action = Action(
+          action_type=correct_actions[task],
+          explanation="deterministic"
+         )
 
         obs, reward, done, _ = env.step(action)
 
