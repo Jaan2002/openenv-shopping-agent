@@ -3,6 +3,7 @@ from openai import OpenAI
 from env import ShoppingEnv
 from models import Action
 
+
 API_BASE_URL = os.getenv("API_BASE_URL")
 API_KEY = os.getenv("API_KEY")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
@@ -12,10 +13,18 @@ client = OpenAI(
     api_key=API_KEY
 )
 
+
 def run():
     env = ShoppingEnv()
     rewards = []
     steps = 0
+
+    
+    correct_actions = {
+        "easy": "Redmi 9A",
+        "medium": "Lenovo IdeaPad 3",
+        "hard": "Sony WH-CH510"
+    }
 
     for task in ["easy", "medium", "hard"]:
         print(f"[START] task={task} env=openenv-shopping model={MODEL_NAME}")
@@ -30,23 +39,19 @@ def run():
                 max_tokens=5
             )
         except Exception:
-            pass
+            pass  # do not crash
 
         
-        correct_actions = {
-         "easy": "Redmi 9A",
-          "medium": "Lenovo IdeaPad 3",
-          "hard": "Sony WH-CH510"
-         }
-
         action = Action(
-          action_type=correct_actions[task],
-          explanation="deterministic"
-         )
+            action_type=correct_actions[task],
+            explanation="deterministic"
+        )
 
         obs, reward, done, _ = env.step(action)
 
+        
         score = max(0.01, min(0.99, float(reward.score)))
+
         rewards.append(f"{score:.2f}")
         steps += 1
 
