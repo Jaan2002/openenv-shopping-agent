@@ -1,5 +1,6 @@
-fastapi
-uvicorn
-openenv-core
+flask
+openenv-core>=0.2.0
 openai
 requests
+uvicorn
+fastapi
