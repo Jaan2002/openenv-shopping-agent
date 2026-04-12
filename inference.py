@@ -7,7 +7,7 @@ MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
 
 client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
-BASE_URL = os.getenv("SPACE_URL")  
+BASE_URL = os.getenv("https://huggingface.co/spaces/Jaanvi786/shopping-ai-env")  
 
 
 def run():
