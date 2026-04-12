@@ -1,13 +1,12 @@
-from openenv.core.env_server import Action, Observation, State
+from pydantic import BaseModel
 
-
-class TaskAction(Action):
+class Action(BaseModel):
     product: str
 
-
-class TaskObservation(Observation):
+class Observation(BaseModel):
     query: str
+    done: bool
+    reward: float
 
-
-class TaskState(State):
+class State(BaseModel):
     pass
