@@ -8,11 +8,7 @@ class ShoppingEnv:
 
     def _safe_score(self, x):
         x = float(x)
-        if x <= 0.01:
-            return 0.01
-        if x >= 0.99:
-            return 0.99
-        return float(f"{x:.2f}")
+        return round(max(0.02, min(0.98, x)), 2)
 
     def reset(self, task_id=None):
         if task_id:
