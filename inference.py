@@ -39,7 +39,7 @@ def run():
           "hard": "Sony WH-CH510"
          }
 
-         action = Action(
+        action = Action(
           action_type=correct_actions[task],
           explanation="deterministic"
          )
