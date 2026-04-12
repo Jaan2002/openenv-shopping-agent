@@ -4,10 +4,10 @@ name: "shopping-env"
 
 tasks:
   - id: easy
-    grader: server.environment:grade_easy
+    grader: server.env:grade_easy
 
   - id: medium
-    grader: server.environment:grade_medium
+    grader: server.env:grade_medium
 
   - id: hard
-    grader: server.environment:grade_hard
+    grader: server.env:grade_hard
